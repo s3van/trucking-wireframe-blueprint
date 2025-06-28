@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,10 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { useSubmitQuoteMutation } from "@/store/api";
 
 const QuoteForm = () => {
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitQuote, { isLoading: isSubmitting }] = useSubmitQuoteMutation();
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -53,39 +53,13 @@ const QuoteForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
     
     try {
-      const orderNumber = Math.random().toString(36).substr(2, 9).toUpperCase();
-      const adminToken = localStorage.getItem('adminToken');
+      const result = await submitQuote(formData).unwrap();
       
-      // Prepare quote data
-      const quoteData = {
-        ...formData,
-        orderNumber,
-        submittedAt: new Date().toISOString()
-      };
-
-      console.log("Submitting quote:", quoteData);
-      
-      // If admin token exists, use it in the Authorization header
-      if (adminToken) {
-        console.log("Using admin token for quote submission");
-        // Here you would make the API call to submit the quote with the token
-        // Example:
-        // const response = await fetch('your-quote-api-endpoint', {
-        //   method: 'POST',
-        //   headers: {
-        //     'Content-Type': 'application/json',
-        //     'Authorization': `Bearer ${adminToken}`
-        //   },
-        //   body: JSON.stringify(quoteData)
-        // });
-      }
-
       toast({
         title: "Quote Request Submitted!",
-        description: `Your order number is ${orderNumber}. Check your email for confirmation.`,
+        description: `Your order number is ${result.orderNumber}. Check your email for confirmation.`,
       });
 
       // Reset form
@@ -104,8 +78,6 @@ const QuoteForm = () => {
         description: "There was an error submitting your quote. Please try again.",
         variant: "destructive"
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
