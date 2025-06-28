@@ -32,11 +32,16 @@ export interface LoginResponse {
   message?: string;
 }
 
+export interface QuoteSubmissionResponse {
+  orderNumber: string;
+  message: string;
+}
+
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({
     baseUrl: 'https://carrier-api-s6c9.onrender.com',
-    prepareHeaders: (headers, { getState }) => {
+    prepareHeaders: (headers) => {
       const token = localStorage.getItem('adminToken');
       if (token) {
         headers.set('Authorization', `Bearer ${token}`);
@@ -46,7 +51,6 @@ export const api = createApi({
   }),
   tagTypes: ['Quote', 'Auth'],
   endpoints: (builder) => ({
-    // Admin login
     adminLogin: builder.mutation<LoginResponse, LoginRequest>({
       query: (credentials) => ({
         url: '/admin/signin',
@@ -55,9 +59,7 @@ export const api = createApi({
       }),
       invalidatesTags: ['Auth'],
     }),
-
-    // Submit quote request
-    submitQuote: builder.mutation<{ orderNumber: string; message: string }, QuoteRequest>({
+    submitQuote: builder.mutation<QuoteSubmissionResponse, QuoteRequest>({
       query: (quoteData) => ({
         url: '/quotes',
         method: 'POST',
@@ -69,8 +71,6 @@ export const api = createApi({
       }),
       invalidatesTags: ['Quote'],
     }),
-
-    // Get all quotes (admin only)
     getQuotes: builder.query<Quote[], void>({
       query: () => '/quotes',
       providesTags: ['Quote'],
