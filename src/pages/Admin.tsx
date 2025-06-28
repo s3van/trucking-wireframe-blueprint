@@ -23,6 +23,8 @@ interface Quote {
 const Admin = () => {
   const { toast } = useToast();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [authToken, setAuthToken] = useState<string | null>(null);
   const [loginData, setLoginData] = useState({
     username: "",
     password: ""
@@ -54,33 +56,72 @@ const Admin = () => {
     }
   ]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     
-    // Simple login check - in a real app, this would be validated against a backend
-    if (loginData.username === "admin" && loginData.password === "admin123") {
-      setIsLoggedIn(true);
-      toast({
-        title: "Login Successful",
-        description: "Welcome to the admin panel",
+    try {
+      const response = await fetch('https://carrier-api-s6c9.onrender.com/admin/signin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: loginData.username,
+          password: loginData.password
+        })
       });
-    } else {
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Login response:', data);
+        
+        if (data.token) {
+          setAuthToken(data.token);
+          localStorage.setItem('adminToken', data.token);
+          setIsLoggedIn(true);
+          toast({
+            title: "Login Successful",
+            description: "Welcome to the admin panel",
+          });
+        } else {
+          throw new Error('No token received');
+        }
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Login failed');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
       toast({
         title: "Login Failed",
-        description: "Invalid username or password",
+        description: error instanceof Error ? error.message : "Invalid credentials or server error",
         variant: "destructive"
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleLogout = () => {
     setIsLoggedIn(false);
+    setAuthToken(null);
+    localStorage.removeItem('adminToken');
     setLoginData({ username: "", password: "" });
     toast({
       title: "Logged Out",
       description: "You have been successfully logged out",
     });
   };
+
+  // Check for existing token on component mount
+  useState(() => {
+    const savedToken = localStorage.getItem('adminToken');
+    if (savedToken) {
+      setAuthToken(savedToken);
+      setIsLoggedIn(true);
+    }
+  });
 
   if (!isLoggedIn) {
     return (
@@ -115,14 +156,14 @@ const Admin = () => {
                   placeholder="Enter password"
                 />
               </div>
-              <Button type="submit" className="w-full">
-                Login
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "Signing in..." : "Login"}
               </Button>
             </form>
             <div className="mt-4 text-sm text-gray-600 text-center">
-              <p>Demo credentials:</p>
+              <p>API credentials:</p>
               <p>Username: admin</p>
-              <p>Password: admin123</p>
+              <p>Password: admin!@</p>
             </div>
           </CardContent>
         </Card>
@@ -135,9 +176,12 @@ const Admin = () => {
       <header className="bg-white shadow">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-900">Admin Panel</h1>
-          <Button onClick={handleLogout} variant="outline">
-            Logout
-          </Button>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-gray-600">Token: {authToken?.substring(0, 20)}...</span>
+            <Button onClick={handleLogout} variant="outline">
+              Logout
+            </Button>
+          </div>
         </div>
       </header>
 

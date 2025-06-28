@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const QuoteForm = () => {
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -50,26 +51,62 @@ const QuoteForm = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const orderNumber = Math.random().toString(36).substr(2, 9).toUpperCase();
+    setIsSubmitting(true);
     
-    toast({
-      title: "Quote Request Submitted!",
-      description: `Your order number is ${orderNumber}. Check your email for confirmation.`,
-    });
+    try {
+      const orderNumber = Math.random().toString(36).substr(2, 9).toUpperCase();
+      const adminToken = localStorage.getItem('adminToken');
+      
+      // Prepare quote data
+      const quoteData = {
+        ...formData,
+        orderNumber,
+        submittedAt: new Date().toISOString()
+      };
 
-    console.log("Form submitted:", { ...formData, orderNumber });
-    
-    // Reset form
-    setFormData({
-      name: "",
-      phone: "",
-      email: "",
-      businessType: "",
-      services: [],
-      comments: ""
-    });
+      console.log("Submitting quote:", quoteData);
+      
+      // If admin token exists, use it in the Authorization header
+      if (adminToken) {
+        console.log("Using admin token for quote submission");
+        // Here you would make the API call to submit the quote with the token
+        // Example:
+        // const response = await fetch('your-quote-api-endpoint', {
+        //   method: 'POST',
+        //   headers: {
+        //     'Content-Type': 'application/json',
+        //     'Authorization': `Bearer ${adminToken}`
+        //   },
+        //   body: JSON.stringify(quoteData)
+        // });
+      }
+
+      toast({
+        title: "Quote Request Submitted!",
+        description: `Your order number is ${orderNumber}. Check your email for confirmation.`,
+      });
+
+      // Reset form
+      setFormData({
+        name: "",
+        phone: "",
+        email: "",
+        businessType: "",
+        services: [],
+        comments: ""
+      });
+    } catch (error) {
+      console.error('Quote submission error:', error);
+      toast({
+        title: "Submission Failed",
+        description: "There was an error submitting your quote. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -171,8 +208,9 @@ const QuoteForm = () => {
                 type="submit"
                 size="lg"
                 className="w-full bg-orange-500 hover:bg-orange-600 text-white text-lg py-3"
+                disabled={isSubmitting}
               >
-                Submit Quote Request
+                {isSubmitting ? "Submitting..." : "Submit Quote Request"}
               </Button>
             </form>
           </CardContent>
