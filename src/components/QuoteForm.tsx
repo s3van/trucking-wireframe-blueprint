@@ -14,11 +14,11 @@ const QuoteForm = () => {
   const [submitQuote, { isLoading: isSubmitting }] = useSubmitQuoteMutation();
   const [formData, setFormData] = useState({
     name: "",
-    phone: "",
+    phoneNumber: "",
     email: "",
     businessType: "",
-    services: [] as string[],
-    comments: ""
+    servicesNeeded: [] as string[],
+    comment: ""
   });
 
   const businessTypes = [
@@ -45,37 +45,35 @@ const QuoteForm = () => {
 
   const handleServiceChange = (service: string, checked: boolean) => {
     if (checked) {
-      setFormData(prev => ({ ...prev, services: [...prev.services, service] }));
+      setFormData(prev => ({ ...prev, servicesNeeded: [...prev.servicesNeeded, service] }));
     } else {
-      setFormData(prev => ({ ...prev, services: prev.services.filter(s => s !== service) }));
+      setFormData(prev => ({ ...prev, servicesNeeded: prev.servicesNeeded.filter(s => s !== service) }));
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       const result = await submitQuote(formData).unwrap();
-      
+
       toast({
         title: "Quote Request Submitted!",
-        description: `Your order number is ${result.orderNumber}. Check your email for confirmation.`,
       });
 
       // Reset form
       setFormData({
         name: "",
-        phone: "",
+        phoneNumber: "",
         email: "",
         businessType: "",
-        services: [],
-        comments: ""
+        servicesNeeded: [],
+        comment: ""
       });
     } catch (error) {
       console.error('Quote submission error:', error);
       toast({
         title: "Submission Failed",
-        description: "There was an error submitting your quote. Please try again.",
         variant: "destructive"
       });
     }
@@ -90,7 +88,7 @@ const QuoteForm = () => {
             Get personalized pricing for your trucking compliance needs
           </p>
         </div>
-        
+
         <Card className="shadow-2xl">
           <CardHeader>
             <CardTitle className="text-2xl">Quote Request Form</CardTitle>
@@ -114,8 +112,8 @@ const QuoteForm = () => {
                   <Input
                     id="phone"
                     type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    value={formData.phoneNumber}
+                    onChange={(e) => setFormData(prev => ({ ...prev, phoneNumber: e.target.value }))}
                     required
                     className="mt-2"
                   />
@@ -155,7 +153,7 @@ const QuoteForm = () => {
                     <div key={service} className="flex items-center space-x-2">
                       <Checkbox
                         id={service}
-                        checked={formData.services.includes(service)}
+                        checked={formData.servicesNeeded.includes(service)}
                         onCheckedChange={(checked) => handleServiceChange(service, checked as boolean)}
                       />
                       <Label htmlFor={service} className="text-sm">{service}</Label>
@@ -168,8 +166,8 @@ const QuoteForm = () => {
                 <Label htmlFor="comments">Additional Comments</Label>
                 <Textarea
                   id="comments"
-                  value={formData.comments}
-                  onChange={(e) => setFormData(prev => ({ ...prev, comments: e.target.value }))}
+                  value={formData.comment}
+                  onChange={(e) => setFormData(prev => ({ ...prev, comment: e.target.value }))}
                   className="mt-2"
                   rows={4}
                   placeholder="Tell us about any specific requirements or questions..."

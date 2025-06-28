@@ -1,25 +1,25 @@
-
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { ReactNode } from 'react';
 
 export interface Quote {
-  id: string;
+  id: number;
   name: string;
-  phone: string;
+  phoneNumber: string;
   email: string;
   businessType: string;
-  services: string[];
-  comments: string;
-  orderNumber: string;
-  submittedAt: string;
+  servicesNeeded: string[];
+  comment: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface QuoteRequest {
   name: string;
-  phone: string;
+  phoneNumber: string;
   email: string;
   businessType: string;
-  services: string[];
-  comments: string;
+  servicesNeeded: string[];
+  comment: string;
 }
 
 export interface LoginRequest {
@@ -27,14 +27,21 @@ export interface LoginRequest {
   password: string;
 }
 
-export interface LoginResponse {
-  token: string;
-  message?: string;
-}
-
 export interface QuoteSubmissionResponse {
   orderNumber: string;
   message: string;
+}
+
+export interface QuotesPageRequest {
+  page: number;
+  size: number;
+}
+
+export interface QuoteListResponse {
+  totalItems: number;
+  totalPages: number;
+  currentPage: number;
+  items: Quote[];
 }
 
 export const api = createApi({
@@ -51,7 +58,7 @@ export const api = createApi({
   }),
   tagTypes: ['Quote', 'Auth'],
   endpoints: (builder) => ({
-    adminLogin: builder.mutation<LoginResponse, LoginRequest>({
+    adminLogin: builder.mutation<string, LoginRequest>({
       query: (credentials) => ({
         url: '/admin/signin',
         method: 'POST',
@@ -61,18 +68,14 @@ export const api = createApi({
     }),
     submitQuote: builder.mutation<QuoteSubmissionResponse, QuoteRequest>({
       query: (quoteData) => ({
-        url: '/quotes',
+        url: '/client',
         method: 'POST',
-        body: {
-          ...quoteData,
-          orderNumber: Math.random().toString(36).substr(2, 9).toUpperCase(),
-          submittedAt: new Date().toISOString(),
-        },
+        body: quoteData,
       }),
       invalidatesTags: ['Quote'],
     }),
-    getQuotes: builder.query<Quote[], void>({
-      query: () => '/quotes',
+    getQuotes: builder.query<QuoteListResponse, QuotesPageRequest>({
+      query: ({ page, size }) => `/admin/quotes?page=${page}&size=${size}`,
       providesTags: ['Quote'],
     }),
   }),
